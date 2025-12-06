@@ -155,7 +155,7 @@ export default function ResumeBuilder({ initialContent }) {
         <div className="space-x-2">
           <Button
             variant="destructive"
-            onClick={onSubmit}
+            onClick={handleSubmit(onSubmit)}
             disabled={isSaving}
           >
             {isSaving ? (
@@ -193,7 +193,7 @@ export default function ResumeBuilder({ initialContent }) {
         </TabsList>
 
         <TabsContent value="edit">
-          <form className="space-y-8">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             {/* Contact Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Contact Information</h3>
@@ -212,19 +212,52 @@ export default function ResumeBuilder({ initialContent }) {
                     </p>
                   )}
                 </div>
+                {/* Mobile (Controller) */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Mobile Number</label>
-                  <Input
-                    {...register("contactInfo.mobile")}
-                    type="tel"
-                    placeholder="+1 234 567 8900"
+
+                  <Controller
+                    name="contactInfo.mobile"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <Input
+                        // Do NOT spread {...register(...)} here — we use Controller instead
+                        value={field.value ?? ""}
+                        type="tel"
+                        placeholder="+1 234 567 8900"
+                        onChange={(e) => {
+                          // read raw input value (some custom Input components pass value differently)
+                          const raw = e?.target?.value ?? e; // fallback if called with value directly
+                          // keep only digits and a single leading +
+                          let v = String(raw).replace(/[^+\d]/g, "");
+                          // ensure at most one leading +
+                          const plusCount = (v.match(/\+/g) || []).length;
+                          if (plusCount > 1) {
+                            v = v.replace(/\+/g, "");
+                            v = "+" + v;
+                          }
+                          // if + exists but not at start, move it to start
+                          if (v.includes("+") && v[0] !== "+") {
+                            v = v.replace(/\+/g, "");
+                            v = "+" + v;
+                          }
+                          // optional: limit length to 16 chars total (e.g. + + 15 digits)
+                          if (v.length > 16) v = v.slice(0, 16);
+
+                          // update RHF
+                          field.onChange(v);
+                        }}
+                        onBlur={field.onBlur}
+                      />
+                    )}
                   />
+
                   {errors.contactInfo?.mobile && (
-                    <p className="text-sm text-red-500">
-                      {errors.contactInfo.mobile.message}
-                    </p>
+                    <p className="text-sm text-red-500">{errors.contactInfo.mobile.message}</p>
                   )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">LinkedIn URL</label>
                   <Input

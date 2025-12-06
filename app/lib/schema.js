@@ -29,7 +29,11 @@ export const onboardingSchema = z.object({
 
 export const contactSchema = z.object({
   email: z.string().email("Invalid email address"),
-  mobile: z.string().optional(),
+  mobile: z
+    .string()
+    .regex(/^\+?\d{7,15}$/, "Enter a valid mobile number (7–15 digits, optional leading +)")
+    .transform((v) => (v === "" ? undefined : v))
+    .optional(),
   linkedin: z.string().optional(),
   twitter: z.string().optional(),
 });
@@ -57,7 +61,7 @@ export const entrySchema = z
   );
 
 export const resumeSchema = z.object({
-  contactInfo: contactSchema,
+  contactInfo: contactSchema.optional(),
   summary: z.string().min(1, "Professional summary is required"),
   skills: z.string().min(1, "Skills are required"),
   experience: z.array(entrySchema),
